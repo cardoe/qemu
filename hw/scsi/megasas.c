@@ -2088,6 +2088,7 @@ static const struct SCSIBusInfo megasas_scsi_info = {
 
 static int megasas_scsi_init(PCIDevice *dev)
 {
+    DeviceState *d = &dev->qdev;
     MegasasState *s = DO_UPCAST(MegasasState, dev, dev);
     uint8_t *pci_conf;
     int i, bar_type;
@@ -2160,7 +2161,10 @@ static int megasas_scsi_init(PCIDevice *dev)
     }
 
     scsi_bus_new(&s->bus, &dev->qdev, &megasas_scsi_info, NULL);
-    scsi_bus_legacy_handle_cmdline(&s->bus);
+    scsi_bus_new(&s->bus, DEVICE(dev), &megasas_scsi_info, NULL);
+    if (!d->hotplugged) {
+        return scsi_bus_legacy_handle_cmdline(&s->bus);
+    }
     return 0;
 }
 
