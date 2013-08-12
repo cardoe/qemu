@@ -742,6 +742,11 @@ static QEMUMachine isapc_machine = {
     .init = pc_init_isa,
     .max_cpus = 1,
     .compat_props = (GlobalProperty[]) {
+        {
+            .driver   = "apic-common",
+            .property = "kvmvapic",
+            .value    = "off",
+        },
         { /* end of list */ }
     },
     DEFAULT_MACHINE_OPTIONS,
