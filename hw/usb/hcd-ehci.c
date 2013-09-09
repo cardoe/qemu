@@ -1486,7 +1486,8 @@ static int ehci_process_itd(EHCIState *ehci,
                 return -1;
             }
 
-            qemu_sglist_init(&ehci->isgl, DEVICE(ehci), 2, ehci->as);
+            qemu_sglist_init(&ehci->isgl, BUS(&ehci->bus)->parent,
+                             2, ehci->as);
             if (off + len > 4096) {
                 /* transfer crosses page border */
                 uint32_t len2 = off + len - 4096;
