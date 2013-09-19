@@ -460,9 +460,9 @@ static void virtio_blk_dma_restart_cb(void *opaque, int running,
 
 static void virtio_blk_reset(VirtIODevice *vdev)
 {
-#ifdef CONFIG_VIRTIO_BLK_DATA_PLANE
     VirtIOBlock *s = VIRTIO_BLK(vdev);
 
+#ifdef CONFIG_VIRTIO_BLK_DATA_PLANE
     if (s->dataplane) {
         virtio_blk_data_plane_stop(s->dataplane);
     }
@@ -473,6 +473,7 @@ static void virtio_blk_reset(VirtIODevice *vdev)
      * are per-device request lists.
      */
     bdrv_drain_all();
+    bdrv_set_enable_write_cache(s->bs, s->original_wce);
 }
 
 /* coalesce internal state, copy to pci i/o region 0
@@ -564,7 +565,10 @@ static void virtio_blk_set_status(VirtIODevice *vdev, uint8_t status)
     }
 
     features = vdev->guest_features;
-    bdrv_set_enable_write_cache(s->bs, !!(features & (1 << VIRTIO_BLK_F_WCE)));
+    if (!(features & (1 << VIRTIO_BLK_F_CONFIG_WCE))) {
+        bdrv_set_enable_write_cache(s->bs,
+                                    !!(features & (1 << VIRTIO_BLK_F_WCE)));
+    }
 }
 
 static void virtio_blk_save(QEMUFile *f, void *opaque)
@@ -674,6 +678,7 @@ static int virtio_blk_device_init(VirtIODevice *vdev)
     }
 
     blkconf_serial(&blk->conf, &blk->serial);
+    s->original_wce = bdrv_enable_write_cache(blk->conf.bs);
     if (blkconf_geometry(&blk->conf, NULL, 65535, 255, 255) < 0) {
         return -1;
     }
